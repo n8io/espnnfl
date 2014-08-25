@@ -8,6 +8,8 @@ mkdirp = require('mkdirp');
 rimraf = require('rimraf');
 fs = require('fs');
 crypto = require('crypto');
+async = require('async');
+dataCache = require('./controllers/dataCache');
 
 var express = require("express"),
   http = require("http"),
@@ -68,10 +70,22 @@ app.configure("development", function() {
 require("./routes/all")(app, options);
 require("./routes")(app, options);
 
-http.createServer(app).listen(app.get("port"), app.get("host"), function () {
-  logAppSummary();
-  return;
-});
+async.series({
+    cacheTeams: function(callback) { return dataCache.initTeams(callback); },
+    cachePlayers: function(callback) { return dataCache.initPlayers(callback); }
+  },
+  function(err, results){
+    if(err){
+      console.log(err);
+      return;
+    }
+
+    http.createServer(app).listen(app.get("port"), app.get("host"), function () {
+      logAppSummary();
+      return;
+    });
+  }
+);
 
 function logAppSummary(){
   try{ //Logging should never cause the app to fail

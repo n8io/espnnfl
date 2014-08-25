@@ -1,5 +1,5 @@
 {
-  "name": "ESPN FFL Api",
+  "name": "ESPN NFL Api",
   "hostname": "0.0.0.0",
   "port": 80,
   "compression": {

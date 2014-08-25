@@ -2,6 +2,17 @@ var _ = require('underscore'),
   url = require('url');
 module.exports = function(app, options){
   app.all('*', function(req, res, next){
+    for(key in req.query){
+      req.query[key.toLowerCase()] = req.query[key];
+    }
+
+    for(key in req.headers){
+      req.headers[key.toLowerCase()] = req.headers[key];
+    }
+    next();
+  });
+
+  app.all('*', function(req, res, next){
     // Perform any work that needs to be done each request
 
     var parsedUrl = url.parse(req.url);
@@ -30,7 +41,7 @@ module.exports = function(app, options){
       });
     }
 
-    var passedInToken = req.query.apiKey || req.query.apikey || req.headers['apiKey'] || req.headers['apikey'] || req.body.apiKey || req.body.apikey || '';
+    var passedInToken = req.query.apikey || req.headers.apikey || req.body.apiKey || req.body.apikey || '';
 
     var cfg;
     if(process.env.env_config){
