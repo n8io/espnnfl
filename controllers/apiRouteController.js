@@ -25,6 +25,7 @@ apiRouteController.PlayerSearch = function (req, res) {
     'positionCategory',
     'college',
     'team',
+    'age',
     'number',
     'experience',
     'weight',
@@ -50,15 +51,10 @@ apiRouteController.PlayerSearch = function (req, res) {
     criteria.sortByArray = req.query.sortby.split(',');
   }
 
-  var findOne = false;
-  if(req.query.findone){
-    findOne = req.query.findone.toLowerCase() === 'true' || req.query.findone.toLowerCase() === '1';
-  }
-
   async.series(
     {
       espnAuth: authenticateEspnCredentials,
-      playerSearch: function(cb){ return playerSearch(criteria, cb, findOne); }
+      playerSearch: function(cb){ return playerSearch(criteria, cb); }
     },
     // On Complete
     function(err, results){
@@ -121,17 +117,18 @@ var authenticateEspnCredentials = function(callback){
   // });
 };
 
-var playerSearch = function(criteria, callback, findOne){
+var playerSearch = function(criteria, callback){
   var c = criteria;
-  findOne = arguments.length === 3 ? findOne : false;
 
   var sortableProps = [
     'firstName',
     'lastName',
     'position',
-    'positionCategory',
+    'fantasyPosition',
+    'fantasyPositionCategory',
     'college',
     'team',
+    'age',
     'number',
     'experience',
     'weight',
@@ -152,20 +149,24 @@ var playerSearch = function(criteria, callback, findOne){
     };
   }
 
-  if(tSortByArray.length){
-    c.sortBy = tSortByArray[0];
-  }
+  c.sortByArray = _.clone(tSortByArray);
 
   c.sortDirection = c.sortDirection && c.sortDirection === 'desc' ? 'desc' : 'asc';
 
   c.limit = c.limit && !isNaN(c.limit) ? parseInt(c.limit, 0) : 10;
 
   // console.log(c);
-  var data = _.chain(dataCache.players)[findOne ? 'find' : 'filter'](function(p){
+  var data = _.chain(dataCache.players).filter(function(p){
     var found = true;
 
-    if(typeof c.id !== 'undefined' && !isNaN(c.id)){
+    if(typeof c.id !== 'undefined' && !isNaN(c.id) && c.id.indexOf(',') === -1){
       found = p.id === parseInt(c.id,0);
+      if(found) return true; // Exit immediately
+    }
+    else if(typeof c.id !== 'undefined' && c.id.split(',').length > 0){
+      var found = _(c.id.split(',')).find(function(pid){
+        return p.id === parseInt(pid, 0);
+      });
       if(found) return true; // Exit immediately
     }
 
@@ -190,7 +191,17 @@ var playerSearch = function(criteria, callback, findOne){
     }
 
     if(typeof c.position !== 'undefined'){
-      found = p.position.toLowerCase() === c.position.toLowerCase() || p.fantasyPosition.toLowerCase() === c.position.toLowerCase();
+      found = p.position.toLowerCase() === c.position.toLowerCase();
+      if(!found) return false;
+    }
+
+    if(typeof c.fantasyPosition !== 'undefined'){
+      found = p.fantasyPosition.toLowerCase() === c.fantasyPosition.toLowerCase();
+      if(!found) return false;
+    }
+
+    if(typeof c.fantasyPositionCategory !== 'undefined'){
+      found = p.fantasyPositionCategory.toLowerCase() === c.fantasyPositionCategory.toLowerCase();
       if(!found) return false;
     }
 
@@ -224,13 +235,34 @@ var playerSearch = function(criteria, callback, findOne){
 
     return found;
   })
-  .sortBy(c.sortBy)
-  .tap(function(items){
+  .sortBy(function(p){
+    var key = '';
+    for (var i = 0; i < c.sortByArray.length; i++) {
+      if(typeof p[c.sortByArray[i]] === 'number'){
+        key+=_.str.lpad(p[c.sortByArray[i]].toFixed(0), 8, '0');
+      }
+      else if (p[c.sortByArray[i]]){
+        key+=p[c.sortByArray[i]].toString();
+      }
+    };
+    // console.log(key);
+    return key;
+  })
+  .tap(function(players){
     if(c.sortDirection === 'desc'){
-      return _(items).reverse();
+      return _(players).reverse();
     }
+    return _(players).reject(function(p){
+      var isValid = true;
+      for (var i = 0; i < c.sortByArray.length; i++) {
+        if(!p[c.sortByArray[i]]){
+          isValid = false;
+          break;
+        }
+      };
 
-    return items;
+      return isValid;
+    });
   })
   .first(c.limit)
   .value();
