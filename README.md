@@ -1,6 +1,6 @@
 #espnnfl
 
-[![Build Status](https://drone.io/github.com/n8io/espnffl/status.png)](https://drone.io/github.com/n8io/espnnfl/latest)
+[![Build Status](https://drone.io/github.com/n8io/espnnfl/status.png)](https://drone.io/github.com/n8io/espnnfl/latest)
 
 ##Routes:
 ===
