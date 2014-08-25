@@ -26,11 +26,16 @@ apiRouteController.PlayerSearch = function (req, res) {
     'college',
     'team',
     'number',
-    'experience'
+    'experience',
+    'weight',
+    'id',
+
+    'limit',
+    'sortDirection',
+    'sortBy'
   ];
 
   for (var i = 0; i < searchValues.length; i++) {
-    console.log(searchValues[i].toLowerCase());
     var val = typeof req.query[searchValues[i].toLowerCase()] !== 'undefined' ? req.query[searchValues[i].toLowerCase()] : '';
     if(val){
       criteria[searchValues[i]] = req.query[searchValues[i].toLowerCase()];
@@ -41,10 +46,19 @@ apiRouteController.PlayerSearch = function (req, res) {
     criteria.heightInInches = req.query.height;
   }
 
+  if(req.query.sortby){
+    criteria.sortByArray = req.query.sortby.split(',');
+  }
+
+  var findOne = false;
+  if(req.query.findone){
+    findOne = req.query.findone.toLowerCase() === 'true' || req.query.findone.toLowerCase() === '1';
+  }
+
   async.series(
     {
       espnAuth: authenticateEspnCredentials,
-      playerSearch: function(cb){ return playerSearch(criteria, cb); }
+      playerSearch: function(cb){ return playerSearch(criteria, cb, findOne); }
     },
     // On Complete
     function(err, results){
@@ -52,6 +66,11 @@ apiRouteController.PlayerSearch = function (req, res) {
         console.log(err);
         return res.status(500).json({ 'message' : 'Failed to retrieve player by the given info.' });
       }
+
+      if(!results.playerSearch){
+        return res.status(404).json({ 'message' : 'Failed to retrieve player by the given info.' });
+      }
+
       return sendBackValidResponse(res, results.playerSearch);
     }
   );
@@ -102,8 +121,121 @@ var authenticateEspnCredentials = function(callback){
   // });
 };
 
-var playerSearch = function(criteria, callback){
-  callback(null, _(dataCache.players).findWhere(criteria));
+var playerSearch = function(criteria, callback, findOne){
+  var c = criteria;
+  findOne = arguments.length === 3 ? findOne : false;
+
+  var sortableProps = [
+    'firstName',
+    'lastName',
+    'position',
+    'positionCategory',
+    'college',
+    'team',
+    'number',
+    'experience',
+    'weight',
+    'id'
+  ];
+
+  var tSortByArray = [];
+  if(c.sortByArray && c.sortByArray.length){
+    for (var i = 0; i < c.sortByArray.length; i++) {
+      var foundSortableProp = _(sortableProps).find(function(prop){
+        return prop.toLowerCase() === c.sortByArray[i].toLowerCase();
+      });
+      if(foundSortableProp){
+        if(tSortByArray.indexOf(foundSortableProp) === -1){
+          tSortByArray.push(foundSortableProp)
+        }
+      }
+    };
+  }
+
+  if(tSortByArray.length){
+    c.sortBy = tSortByArray[0];
+  }
+
+  c.sortDirection = c.sortDirection && c.sortDirection === 'desc' ? 'desc' : 'asc';
+
+  c.limit = c.limit && !isNaN(c.limit) ? parseInt(c.limit, 0) : 10;
+
+  // console.log(c);
+  var data = _.chain(dataCache.players)[findOne ? 'find' : 'filter'](function(p){
+    var found = true;
+
+    if(typeof c.id !== 'undefined' && !isNaN(c.id)){
+      found = p.id === parseInt(c.id,0);
+      if(found) return true; // Exit immediately
+    }
+
+    if(typeof c.firstName !== 'undefined'){
+      found = p.firstName.toLowerCase() === c.firstName.toLowerCase();
+      if(!found) return false;
+    }
+
+    if(typeof c.lastName !== 'undefined'){
+      found = p.lastName.toLowerCase() === c.lastName.toLowerCase();
+      if(!found) return false;
+    }
+
+    if(typeof c.college !== 'undefined'){
+      found = p.college.toLowerCase() === c.college.toLowerCase();
+      if(!found) return false;
+    }
+
+    if(typeof c.team !== 'undefined'){
+      found = p.team.toLowerCase() === c.team.toLowerCase();
+      if(!found) return false;
+    }
+
+    if(typeof c.position !== 'undefined'){
+      found = p.position.toLowerCase() === c.position.toLowerCase() || p.fantasyPosition.toLowerCase() === c.position.toLowerCase();
+      if(!found) return false;
+    }
+
+    if(typeof c.age !== 'undefined' && !isNaN(c.age)){
+      found = p.age === parseInt(c.age,0);
+      if(!found) return false;
+    }
+    else if(typeof p.age === 'undefined' && c.sortBy === 'age'){
+      return false;
+    }
+
+    if(typeof c.heightInInches !== 'undefined' && !isNaN(c.heightInInches)){
+      found = p.heightInInches === parseInt(c.heightInInches,0);
+      if(!found) return false;
+    }
+
+    if(typeof c.weight !== 'undefined' && !isNaN(c.weight)){
+      found = (p.weight <= (parseInt(c.weight,0) + 10)) && (p.weight >= (parseInt(c.weight,0) - 10)); // Between 10+/- lbs
+      if(!found) return false;
+    }
+
+    if(typeof c.experience !== 'undefined' && !isNaN(c.experience)){
+      found = p.experience === parseInt(c.experience,0);
+      if(!found) return false;
+    }
+
+    if(typeof c.number !== 'undefined' && !isNaN(c.number)){
+      found = p.number === parseInt(c.number,0);
+      if(!found) return false;
+    }
+
+    return found;
+  })
+  .sortBy(c.sortBy)
+  .tap(function(items){
+    if(c.sortDirection === 'desc'){
+      return _(items).reverse();
+    }
+
+    return items;
+  })
+  .first(c.limit)
+  .value();
+
+  callback(null, data);
 };
 
 var sendBackValidResponse = function(res, responeBody){

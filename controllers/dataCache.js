@@ -55,7 +55,7 @@ var parsePlayerInfo = function(row){
   var link = $(row).find('a');
   var id = parseInt(link.attr('href').split('http://espn.go.com/nfl/player/_/id/')[1].split('/')[0], 0);
   var firstName = _.str.trim(link.text().split(' ')[0]);
-  var lastName = _.str.trim(link.text().split(' ')[1]);
+  var lastName = _.str.trim(_(link.text().split(' ')).rest(1).join(' '));
   var tdPosition = $(row).find('td').eq(2);
   var position = _.str.trim(tdPosition.text(), [' ', '?']);
   var tdNumber = $(row).find('td').first();
@@ -78,23 +78,46 @@ var parsePlayerInfo = function(row){
   var experience = parseInt(_.str.trim(tdExperience.text(), [' ', '-']), 0) || 0;
 
   var tdCollege = $(row).find('td').eq(7);
-  var college = _.str.trim(tdCollege.text(), [' ', '?']);
+  var college = _.str.trim(tdCollege.text(), [' ', '?', '-']);
 
   var player = {
     id: id,
     firstName: firstName,
     lastName: lastName,
     position: position.toUpperCase(),
-    age: age,
-    heightInInches: height,
-    height: strHeight,
-    weight: weight,
-    college: college,
     experience: experience,
     fantasyPosition: parsePlayerFantasyPosition(position),
     fantasyPositionCategory: parsePlayerFantasyPositionCategory(position),
     number: number
   };
+
+  if(age > 0){
+    player.age = age;
+  }
+
+  if(number > 0){
+    player.number = number;
+  }
+
+  if(weight > 0){
+    player.weight = weight;
+  }
+
+  if(height > 0){
+    player.heightInInches = height;
+  }
+
+  if(experience > 0){
+    player.experience = experience;
+  }
+
+  if(college){
+    player.college = college;
+  }
+
+  if(strHeight){
+    player.height = strHeight;
+  }
 
   return player;
 };
