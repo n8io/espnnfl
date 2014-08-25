@@ -17,6 +17,8 @@ logs
 
 # Temp files
 *~
+players.json
+teams.json
 
 # Auto generated css & js
 public/css/custom/*.css
