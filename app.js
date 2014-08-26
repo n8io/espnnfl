@@ -10,6 +10,7 @@ fs = require('fs');
 crypto = require('crypto');
 async = require('async');
 dataCache = require('./controllers/dataCache');
+appRoutes = require('./controllers/routes');
 
 var express = require("express"),
   http = require("http"),

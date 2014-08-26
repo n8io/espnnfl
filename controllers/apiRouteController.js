@@ -167,73 +167,125 @@ var playerSearch = function(criteria, callback){
       else return false;
     }
 
-    if(typeof c.firstName !== 'undefined'){
-      found = p.firstName.toLowerCase() === c.firstName.toLowerCase();
-      if(!found) return false;
-    }
+    found = stringSearch(c, 'firstName', p);
+    if(!found) return false;
 
-    if(typeof c.lastName !== 'undefined'){
-      found = p.lastName.toLowerCase() === c.lastName.toLowerCase();
-      if(!found) return false;
-    }
+    found = stringSearch(c, 'lastName', p);
+    if(!found) return false;
 
-    if(typeof c.college !== 'undefined'){
-      found = p.college.toLowerCase() === c.college.toLowerCase();
-      if(!found) return false;
-    }
+    found = stringSearch(c, 'college', p);
+    if(!found) return false;
 
-    if(typeof c.team !== 'undefined'){
-      found = p.team.toLowerCase() === c.team.toLowerCase();
-      if(!found) return false;
-    }
+    found = stringSearch(c, 'team', p);
+    if(!found) return false;
 
-    if(typeof c.position !== 'undefined'){
-      found = p.position.toLowerCase() === c.position.toLowerCase();
-      if(!found) return false;
-    }
+    found = stringSearch(c, 'position', p);
+    if(!found) return false;
 
-    if(typeof c.fantasyPosition !== 'undefined'){
-      found = p.fantasyPosition.toLowerCase() === c.fantasyPosition.toLowerCase();
-      if(!found) return false;
-    }
+    found = stringSearch(c, 'fantasyPosition', p);
+    if(!found) return false;
 
-    if(typeof c.fantasyPositionCategory !== 'undefined'){
-      found = p.fantasyPositionCategory.toLowerCase() === c.fantasyPositionCategory.toLowerCase();
-      if(!found) return false;
-    }
+    found = stringSearch(c, 'fantasyPositionCategory', p);
+    if(!found) return false;
 
-    if(typeof c.age !== 'undefined' && !isNaN(c.age)){
-      found = p.age === parseInt(c.age,0);
-      if(!found) return false;
-    }
-    else if(typeof p.age === 'undefined' && c.sortBy === 'age'){
-      return false;
-    }
+    // if(typeof c.firstName !== 'undefined'){
+    //   found = p.firstName.toLowerCase() === c.firstName.toLowerCase();
 
-    if(typeof c.heightInInches !== 'undefined' && !isNaN(c.heightInInches)){
-      found = p.heightInInches === parseInt(c.heightInInches,0);
-      if(!found) return false;
-    }
+    //   if(!found && _.str.startsWith(c.firstName,'*') && c.firstName.length > 1 && _.str.trim(c.firstName,'*').length){
+    //     found = _.str.endsWith((p.firstName||'').toLowerCase(), _(c.firstName).rest(1).join('').toLowerCase());
+    //   }
 
-    if(typeof c.weight !== 'undefined' && !isNaN(c.weight)){
-      found = (p.weight <= (parseInt(c.weight,0) + 10)) && (p.weight >= (parseInt(c.weight,0) - 10)); // Between 10+/- lbs
-      if(!found) return false;
-    }
+    //   if(!found) return false;
+    // }
 
-    if(typeof c.experience !== 'undefined' && !isNaN(c.experience)){
-      found = p.experience === parseInt(c.experience,0);
-      if(!found) return false;
-    }
+    // if(typeof c.lastName !== 'undefined'){
+    //   found = p.lastName.toLowerCase() === c.lastName.toLowerCase();
+    //   if(!found) return false;
+    // }
 
-    if(typeof c.number !== 'undefined' && !isNaN(c.number)){
-      found = p.number === parseInt(c.number,0);
-      if(!found) return false;
-    }
+    // if(typeof c.college !== 'undefined'){
+    //   found = p.college.toLowerCase() === c.college.toLowerCase();
+    //   if(!found) return false;
+    // }
+
+    // if(typeof c.team !== 'undefined'){
+    //   found = p.team.toLowerCase() === c.team.toLowerCase();
+    //   if(!found) return false;
+    // }
+
+    // if(typeof c.position !== 'undefined'){
+    //   found = p.position.toLowerCase() === c.position.toLowerCase();
+    //   if(!found) return false;
+    // }
+
+    // if(typeof c.fantasyPosition !== 'undefined'){
+    //   found = p.fantasyPosition.toLowerCase() === c.fantasyPosition.toLowerCase();
+    //   if(!found) return false;
+    // }
+
+    // if(typeof c.fantasyPositionCategory !== 'undefined'){
+    //   found = p.fantasyPositionCategory.toLowerCase() === c.fantasyPositionCategory.toLowerCase();
+    //   if(!found) return false;
+    // }
+
+    found = numberSearch(c, 'age', p);
+    if(!found) return false;
+
+    found = numberSearch(c, 'heightInInches', p);
+    if(!found) return false;
+
+    found = numberSearch(c, 'weight', p, 10);
+    if(!found) return false;
+
+    found = numberSearch(c, 'experience', p);
+    if(!found) return false;
+
+    found = numberSearch(c, 'number', p);
+    if(!found) return false;
+
+    // if(typeof c.age !== 'undefined' && !isNaN(c.age)){
+    //   found = p.age === parseInt(c.age,0);
+    //   if(!found) return false;
+    // }
+    // else if(typeof p.age === 'undefined' && c.sortBy === 'age'){
+    //   return false;
+    // }
+
+    // if(typeof c.heightInInches !== 'undefined' && !isNaN(c.heightInInches)){
+    //   found = p.heightInInches === parseInt(c.heightInInches,0);
+    //   if(!found) return false;
+    // }
+
+    // if(typeof c.weight !== 'undefined' && !isNaN(c.weight)){
+    //   found = (p.weight <= (parseInt(c.weight,0) + 10)) && (p.weight >= (parseInt(c.weight,0) - 10)); // Between 10+/- lbs
+    //   if(!found) return false;
+    // }
+
+    // if(typeof c.experience !== 'undefined' && !isNaN(c.experience)){
+    //   found = p.experience === parseInt(c.experience,0);
+    //   if(!found) return false;
+    // }
+
+    // if(typeof c.number !== 'undefined' && !isNaN(c.number)){
+    //   found = p.number === parseInt(c.number,0);
+    //   if(!found) return false;
+    // }
 
     return found;
   })
   .sortBy(function(p){
-    return _(p).chain().pick(c.sortByArray).values().value();
+    return _.chain(p) // Make it chainable [{hi:1},{there:2},{guy:3}]
+      .pick(c.sortByArray) // Grab the sort properties from objects ['hi','there'] => [{hi:1},{there:2}]
+      .values() // Pull out only the values into an array [1,2]
+      .map(function(item){
+        if(typeof item === 'undefined' || item === null || typeof item === 'number'){
+          return item;
+        }
+        else{
+          return item.toString().toUpperCase();
+        }
+      })
+      .value(); // Return the value array [1,2]
   })
   .tap(function(players){
     if(c.sortDirection === 'desc'){
@@ -257,6 +309,49 @@ var playerSearch = function(criteria, callback){
 
   callback(null, data);
 };
+
+var stringSearch = function(criteria, property, obj){
+  var c = criteria;
+  var p = property;
+  var o = obj;
+  var found = true;
+
+  if(typeof c[p] !== 'undefined'){
+    found = (o[p]||'').toLowerCase() === c[p].toLowerCase();
+
+    // Ends with
+    if(!found && _.str.startsWith(c[p],'*') && c[p].length > 1 && _.str.trim(c[p],'*').length){
+      found = _.str.endsWith((o[p]||'').toLowerCase(), _(c[p]).rest(1).join('').toLowerCase());
+    }
+
+    // Starts with
+    if(!found && _.str.endsWith(c[p],'*') && c[p].length > 1 && _.str.trim(c[p],'*').length){
+      found = _.str.startsWith((o[p]||'').toLowerCase(), _(c[p]).first(c[p].length - 1).join('').toLowerCase());
+    }
+
+    // Contains
+    if(!found && _.str.endsWith(c[p],'*') && _.str.startsWith(c[p],'*') && c[p].length > 2 && _.str.trim(c[p],'*').length){
+      found = _.str.contains((o[p]||'').toLowerCase(), _.str.trim(c[p], '*').toLowerCase());
+    }
+  }
+
+  return found;
+}
+
+var numberSearch = function(criteria, property, obj, variance){
+  var c = criteria;
+  var p = property;
+  var o = obj;
+  var v = variance || 0;
+  var found = true;
+
+  if(typeof c[p] !== 'undefined' && !isNaN(c[p])){
+    found = ((o[p]||-1) <= (parseInt(c[p],0) + v)) && ((o[p]||-1) >= (parseInt(c[p],0) - v));
+    if(!found) return false;
+  }
+
+  return found;
+}
 
 var sendBackValidResponse = function(res, responeBody){
   lastAuthDate = moment();

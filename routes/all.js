@@ -18,11 +18,7 @@ module.exports = function(app, options){
     var parsedUrl = url.parse(req.url);
 
     if(parsedUrl.pathname === '/' || parsedUrl.pathname.toLowerCase() === '/endpoints'){
-      return res.json(200, [
-        '/player/findOne',
-        '/player/find',
-        "/heartbeat"
-      ]);
+      return res.json(_(appRoutes).pluck('path'));
     }
 
     if(parsedUrl.pathname.toLowerCase() === '/heartbeat'){
