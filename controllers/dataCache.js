@@ -319,7 +319,7 @@ dataCache.initPlayers = function(callback){
 
   async.mapLimit(
     teamIds,
-    8,
+    16,
     parsePlayersFromTeamRoster,
     function(err, results){
       if(err){
