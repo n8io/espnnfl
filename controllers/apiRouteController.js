@@ -164,6 +164,7 @@ var playerSearch = function(criteria, callback){
         return p.id === parseInt(pid, 0);
       });
       if(found) return true; // Exit immediately
+      else return false;
     }
 
     if(typeof c.firstName !== 'undefined'){
