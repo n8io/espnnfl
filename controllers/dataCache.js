@@ -41,7 +41,21 @@ var parsePlayersFromTeamRoster = function(teamAbbrev, callback){
 
     _(rows).each(function(row){
       var player = parsePlayerInfo(row);
+
+      // Hack update because ESPN changed
+      switch(teamAbbrev){
+        case 'WAS':
+          teamAbbrev = 'WSH';
+          break;
+        case 'JAX':
+          teamAbbrev = 'JAC';
+          break;
+        default:
+          break;
+      }
+
       player.team = teamAbbrev;
+
       if(!_(playerCache).findWhere({id:player.id})){
         playerCache.push(player);
       }
