@@ -55,7 +55,7 @@ apiRouteController.PlayerSearch = function (req, res) {
     // On Complete
     function(err, results){
       if(err){
-        console.log(err);
+        loggger.error(err);
         return res.status(500).json({ 'message' : 'Failed to retrieve player by the given info.' });
       }
 
