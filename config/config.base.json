@@ -2,6 +2,13 @@
   "name": "ESPN NFL Api",
   "hostname": "0.0.0.0",
   "port": 80,
+  "selfPing": {
+    "uri": "http://espnnfl.herokuapp.com/endpoints",
+    "intervalInSecs": 333
+  },
+  "cacheRefresh": {
+    "intervalInHours": 1
+  },
   "compression": {
     "enabled": true
   },

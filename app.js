@@ -2,6 +2,7 @@
 _ = require('underscore');
 _.str = require('underscore.string');
 moment = require('moment');
+request = require('request');
 config = require('nconf').env([ 'NODE_ENV' ]);
 stringify = require('json-stringify-safe');
 mkdirp = require('mkdirp');
@@ -82,6 +83,7 @@ async.series({
     }
 
     http.createServer(app).listen(app.get("port"), app.get("host"), function () {
+      startRefreshIntervals();
       logAppSummary();
       return;
     });
@@ -102,10 +104,47 @@ function logAppSummary(){
     }
     logger.info('Some witty message to uniquely identify your app here.');
     logger.info('Express server listening on host and port: ' + app.get('host') + ':' + app.get('port'));
+    logger.info('Self-ping set for every ' + config.get('selfPing:intervalInSecs') + ' seconds');
+    logger.info('Cache refresh set for every ' + config.get('cacheRefresh:intervalInHours') + ' hours');
   }
   catch(e){
     console.log(e);
   }
+}
+
+var selfPingInterval = null;
+var cacheRefreshInterval = null;
+function startRefreshIntervals(){
+  clearInterval(selfPingInterval);
+  clearInterval(cacheRefreshInterval);
+
+  selfPingInterval = setInterval(function(){
+    var opts = {uri:config.get('selfPing:uri')};
+    request(opts, function(err, results){
+      if(err){
+        logger.error(err);
+        return;
+      }
+
+      logger.info('Self-ping @ ' + config.get('selfPing:uri') + ' returned 200 OK');
+    });
+  }, config.get('selfPing:intervalInSecs') * 1000);
+
+  cacheRefreshInterval = setInterval(function(){
+    dataCache.initTeams(function(tErr, teams){
+      if(tErr){
+        logger.error('Failed to refresh team cache. Will try again later.');
+        return;
+      }
+      dataCache.initPlayers(function(pErr, players){
+        if(pErr){
+          logger.error('Failed to refresh player cache. Will try again later.');
+          return;
+        }
+        logger.info('Data cache refreshed. Will refresh again in ' + config.get('cacheRefresh:intervalInHours') + ' hours.');
+      });
+    })
+  }, config.get('cacheRefresh:intervalInHours') * 60 * 60 * 1000);
 }
 
 function getLogFilename(config){
